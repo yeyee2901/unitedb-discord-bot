@@ -18,7 +18,7 @@ func (ds *DataSource) GetBattleItemsByName(filterName, filterTier string) (res [
         SELECT
             id, name, description, tier, cooldown, trainer_level
         FROM
-            pokemon_held_item
+            pokemon_battle_items
     `
 
 	if len(filterName) != 0 {

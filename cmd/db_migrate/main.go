@@ -77,7 +77,7 @@ func InsertBattleItems(db *sqlx.DB, cfg *config.AppConfig) {
 
 	// insert the data
 	q := `
-        INSERT INTO pokemon_held_item
+        INSERT INTO pokemon_battle_items
             (name, description, tier, cooldown, trainer_level)
         VALUES
             (:name, :description, :tier, :cooldown, :trainer_level)

@@ -38,7 +38,7 @@ func TestDB_GetBattleItems(t *testing.T) {
 	}
 
 	log.Info().Msg("With both filter")
-	if res, err := ds.GetBattleItemsByName("", "S"); err != nil {
+	if res, err := ds.GetBattleItemsByName("X", "S"); err != nil {
 		t.Fatal(err)
 	} else {
 		debug.DumpStruct(res)

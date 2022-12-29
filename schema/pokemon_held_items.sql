@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS pokemon_held_item (
+CREATE TABLE IF NOT EXISTS pokemon_battle_items (
     `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
     `name` varchar(100) NOT NULL,
     `description` text NOT NULL,

@@ -5,6 +5,9 @@ GO_TEST_FLAGS = -v -c -coverpkg ./...
 run:
 	go run ./cmd/bot
 
+migrate:
+	go run ./cmd/db_migrate
+
 test:
 	mkdir -p ./test/datasource
 	go test ${GO_TEST_FLAGS} -o ./test/datasource/compiled ./pkg/datasource
