@@ -1,8 +1,6 @@
 package discord
 
 import (
-	"fmt"
-
 	"github.com/bwmarrin/discordgo"
 	"github.com/rs/zerolog/log"
 )
@@ -21,9 +19,32 @@ func (dc *DiscordBotService) registerCommands(s *discordgo.Session) {
 		{
 			DiscordGoCommand: &discordgo.ApplicationCommand{
 				Name:        "hello",
-				Description: "make the bot say hello",
+				Description: "Make the bot say hello",
 			},
 			Handler: dc.HelloCommand,
+		},
+		{
+			DiscordGoCommand: &discordgo.ApplicationCommand{
+				Name:        "battle-items",
+				Description: "Search for battle items",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionString,
+						Name:        "name",
+						Description: "Filter battle items by name",
+						Required:    false,
+						MaxLength:   15,
+					},
+					{
+						Type:        discordgo.ApplicationCommandOptionString,
+						Name:        "tier",
+						Description: "Filter battle items by tier",
+						Required:    false,
+						MaxLength:   1,
+					},
+				},
+			},
+			Handler: dc.BattleItemsCommand,
 		},
 	}
 
@@ -40,12 +61,12 @@ func (dc *DiscordBotService) registerCommands(s *discordgo.Session) {
 	for i := range botCommands {
 		// register command to discord API
 		// NOTE: appId = Bot ID
-		if _, err := s.ApplicationCommandCreate(s.State.User.ID, guildId, botCommands[i].DiscordGoCommand); err != nil {
+		if successCmd, err := s.ApplicationCommandCreate(s.State.User.ID, guildId, botCommands[i].DiscordGoCommand); err != nil {
 			log.Error().Err(err).Msg("discord.RegisterCommands.Failure")
 			panic(err)
 		} else {
 			// required for cleanup
-			registeredCommand[i] = botCommands[i].DiscordGoCommand
+			registeredCommand[i] = successCmd
 
 			// register command handler
 			s.AddHandler(botCommands[i].Handler)
@@ -65,7 +86,12 @@ func (dc *DiscordBotService) unregisterCommands(s *discordgo.Session) {
 		guildId = dc.Config.Discord.Servers.Pokemon
 	}
 
-	log.Info().Msg("discord.unregisterCommands")
+	commandIds := []string{}
+	for i := range dc.RegisteredCommands {
+		commandIds = append(commandIds, dc.RegisteredCommands[i].ID)
+	}
+
+	log.Info().Interface("command_id", commandIds).Msg("discord.unregisterCommands")
 	for _, cmd := range dc.RegisteredCommands {
 		if err := s.ApplicationCommandDelete(s.State.User.ID, guildId, cmd.ID); err != nil {
 			panic(err)
@@ -99,5 +125,28 @@ func (dc *DiscordBotService) HelloCommand(s *discordgo.Session, i *discordgo.Int
 // search for battle items
 func (dc *DiscordBotService) BattleItemsCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	log.Info().Msg("discord.BattleItemsCommand")
-	fmt.Printf("i.ApplicationCommandData().Options: %v\n", i.ApplicationCommandData().Options)
+
+	// parse command options passed in
+	var (
+		optFilterName string
+		optFilterTier string
+	)
+	opt := i.ApplicationCommandData().Options
+	for i := range opt {
+		switch opt[i].Name {
+		case "name":
+			optFilterName = opt[i].StringValue()
+
+		case "tier":
+			optFilterTier = opt[i].StringValue()
+		}
+	}
+
+	// respond data
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: "You entered these filters -> name: " + optFilterName + ", tier: " + optFilterTier,
+		},
+	})
 }
