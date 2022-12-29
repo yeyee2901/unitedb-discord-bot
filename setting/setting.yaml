@@ -1,4 +1,5 @@
 discord:
+  mode: development
   logfile: log/discord.log
   permission_integer: 534723950656
   token_file: CREDENTIALS/bot_token.txt

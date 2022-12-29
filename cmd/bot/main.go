@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"strings"
+	"syscall"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/yeyee2901/unitedb-discord-bot/pkg/config"
 	"github.com/yeyee2901/unitedb-discord-bot/pkg/datasource"
-	"github.com/yeyee2901/unitedb-discord-bot/pkg/debug"
 	"github.com/yeyee2901/unitedb-discord-bot/pkg/discord"
 
 	"github.com/go-redis/redis/v8"
@@ -38,18 +41,41 @@ func main() {
 			log.Error().Err(err).Msg("EXIT.redis")
 		}
 
+		fmt.Println("Bot exited.")
 		log.Info().Msg("EXIT")
 	}()
 
 	// INIT: discord
 	var (
-		clientId     = mustReadFile_String(cfg.Discord.ClientIdFile + "abcdefg")
+		clientId     = mustReadFile_String(cfg.Discord.ClientIdFile)
 		clientSecret = mustReadFile_String(cfg.Discord.ClientSecretFile)
 		token        = mustReadFile_String(cfg.Discord.TokenFile)
 	)
 
-	dcBot := discord.NewDiscordBotService(clientId, clientSecret, token, ds)
-	debug.DumpStruct(dcBot)
+	dcSession, err := discordgo.New(fmt.Sprintf("Bot %s", token))
+	if err != nil {
+		panic(err)
+	}
+
+	dcBot := discord.NewDiscordBotService(clientId, clientSecret, token, ds, dcSession)
+	dcBot.InitBot()
+
+	// open connection to discord using websocket
+	log.Info().Msg("START")
+	fmt.Println("Bot Start")
+	err = dcBot.Bot.Open()
+	if err != nil {
+		panic(err)
+	}
+	defer dcBot.Bot.Close()
+
+	// quit signal
+	osQuit := make(chan os.Signal)
+	signal.Notify(osQuit, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
+
+	// wait for quit signal
+	sig := <-osQuit
+	log.Warn().Str("interrupt", fmt.Sprintf("Received signal %s", sig.String())).Msg("EXIT.interrupt")
 }
 
 // will panic on failure
@@ -95,7 +121,7 @@ func mustReadFile_String(filepath string) string {
 		if len(string(b)) == 0 {
 			panic(err)
 		}
-		return string(b)
+		return strings.ReplaceAll(string(b), "\n", "")
 	}
 }
 
