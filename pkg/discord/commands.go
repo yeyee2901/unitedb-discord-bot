@@ -85,3 +85,12 @@ func (dc *DiscordBotService) HelloCommand(s *discordgo.Session, i *discordgo.Int
 		},
 	})
 }
+
+// BATTLE ITEMS COMMAND
+//
+// /battle-items {name}
+//
+// search for battle items
+func (dc *DiscordBotService) BattleItemsCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	log.Info().Msg("discord.BattleItemsCommand")
+}
