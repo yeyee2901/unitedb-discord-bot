@@ -7,9 +7,10 @@ import (
 )
 
 type AppConfig struct {
-	Discord discordMeta  `json:"discord" yaml:"discord"`
-	DB      databaseMeta `json:"db" yaml:"db"`
-	Redis   redisMeta    `json:"redis" yaml:"redis"`
+	Discord discordMeta  `yaml:"discord"`
+	DB      databaseMeta `yaml:"db"`
+	Redis   redisMeta    `yaml:"redis"`
+	UniteDB uniteDBMeta  `yaml:"unite_db"`
 }
 
 func LoadConfig() *AppConfig {
@@ -53,4 +54,15 @@ type discordMeta struct {
 type discordServerID struct {
 	Pokemon string `yaml:"pokepokemon"`
 	Dev     string `yaml:"development"`
+}
+
+type uniteDBMeta struct {
+	BaseURL   string          `yaml:"base_url"`
+	Endpoints uniteDBEndpoint `yaml:"endpoints"`
+}
+
+type uniteDBEndpoint struct {
+	Pokemon     string `yaml:"pokemon"`
+	HeldItems   string `yaml:"held_items"`
+	BattleItems string `yaml:"battle_items"`
 }

@@ -13,6 +13,13 @@ redis:
   host: 127.0.0.1
   port: 43061
 
+unite_db:
+  base_url: https://unite-db.com
+  endpoints:
+    pokemon: /pokemon.json
+    held_items: /held_items.json
+    battle_items: /battle_items.json
+
 db:
   host: 127.0.0.1:43060
   user: your_username
