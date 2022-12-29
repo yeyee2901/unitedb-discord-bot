@@ -1,0 +1,7 @@
+test/*
+log/*
+sample/*
+CREDENTIALS/*
+Session.vim
+.vscode
+unitedb-discord-bot.compiled
