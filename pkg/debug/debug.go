@@ -1,20 +1,15 @@
 package debug
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 )
 
 func DumpStruct(obj any) {
-	fmt.Println("=================================================")
-	fmt.Println(reflect.TypeOf(obj).String())
-	s := reflect.ValueOf(obj).Elem()
-	typeOfT := s.Type()
-
-	for i := 0; i < s.NumField(); i++ {
-		f := s.Field(i)
-		fmt.Printf(">> %s %s = %#v\n",
-			typeOfT.Field(i).Name, f.Type(), f.Interface())
+	if b, err := json.MarshalIndent(obj, "", "  "); err != nil {
+		fmt.Println("Cannot print", reflect.TypeOf(obj).String())
+	} else {
+		fmt.Println(reflect.TypeOf(obj).String(), string(b))
 	}
-	fmt.Println("=================================================")
 }
