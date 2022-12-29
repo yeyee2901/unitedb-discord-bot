@@ -41,6 +41,7 @@ type databaseMeta struct {
 }
 
 type discordMeta struct {
+	Logfile           string `json:"logfile" yaml:"logfile"`
 	PermissionInteger uint64 `json:"permission_integer" yaml:"permission_integer"`
 	TokenFile         string `json:"token_file" yaml:"token_file"`
 	ClientIdFile      string `json:"client_id_file" yaml:"client_id_file"`
