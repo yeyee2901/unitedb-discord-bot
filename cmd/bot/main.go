@@ -31,6 +31,7 @@ func main() {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Error().Err(fmt.Errorf("%v", err)).Msg("EXIT.fatal")
+			panic(err)
 		}
 
 		if err := ds.DB.Close(); err != nil {
@@ -41,11 +42,10 @@ func main() {
 			log.Error().Err(err).Msg("EXIT.redis")
 		}
 
-		fmt.Println("Bot exited.")
 		log.Info().Msg("EXIT")
 	}()
 
-	// INIT: discord
+	// INIT: discord session
 	var (
 		clientId     = mustReadFile_String(cfg.Discord.ClientIdFile)
 		clientSecret = mustReadFile_String(cfg.Discord.ClientSecretFile)
@@ -57,17 +57,15 @@ func main() {
 		panic(err)
 	}
 
-	dcBot := discord.NewDiscordBotService(clientId, clientSecret, token, ds, dcSession)
-	dcBot.InitBot()
+	// INIT: discord bot service
+	dcBot := discord.NewDiscordBotService(clientId, clientSecret, token, ds)
+	dcBot.Init(dcSession)
+	defer dcBot.DeInit(dcSession)
 
 	// open connection to discord using websocket
+	// this also dispatches listener goroutine
 	log.Info().Msg("START")
-	fmt.Println("Bot Start")
-	err = dcBot.Bot.Open()
-	if err != nil {
-		panic(err)
-	}
-	defer dcBot.Bot.Close()
+	defer dcSession.Close()
 
 	// quit signal
 	osQuit := make(chan os.Signal)
@@ -137,4 +135,5 @@ func initLogger(cfg *config.AppConfig) {
 	})
 	log.Logger = log.With().Caller().Logger()
 	log.Logger = log.With().Timestamp().Logger()
+	log.Logger = log.With().Stack().Logger()
 }

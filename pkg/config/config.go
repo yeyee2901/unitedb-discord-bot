@@ -41,10 +41,16 @@ type databaseMeta struct {
 }
 
 type discordMeta struct {
-	Mode              string `json:"mode" yaml:"mode"`
-	Logfile           string `json:"logfile" yaml:"logfile"`
-	PermissionInteger uint64 `json:"permission_integer" yaml:"permission_integer"`
-	TokenFile         string `json:"token_file" yaml:"token_file"`
-	ClientIdFile      string `json:"client_id_file" yaml:"client_id_file"`
-	ClientSecretFile  string `json:"client_secret_file" yaml:"client_secret_file"`
+	Mode              string          `json:"mode" yaml:"mode"`
+	Logfile           string          `json:"logfile" yaml:"logfile"`
+	PermissionInteger uint64          `json:"permission_integer" yaml:"permission_integer"`
+	TokenFile         string          `json:"token_file" yaml:"token_file"`
+	ClientIdFile      string          `json:"client_id_file" yaml:"client_id_file"`
+	ClientSecretFile  string          `json:"client_secret_file" yaml:"client_secret_file"`
+	Servers           discordServerID `json:"servers" yaml:"servers"`
+}
+
+type discordServerID struct {
+	Pokemon string `yaml:"pokepokemon"`
+	Dev     string `yaml:"development"`
 }
