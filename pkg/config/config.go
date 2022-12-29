@@ -7,8 +7,9 @@ import (
 )
 
 type AppConfig struct {
-	DB    databaseMeta `json:"db" yaml:"db"`
-	Redis redisMeta    `json:"redis" yaml:"redis"`
+	Discord discordMeta  `json:"discord" yaml:"discord"`
+	DB      databaseMeta `json:"db" yaml:"db"`
+	Redis   redisMeta    `json:"redis" yaml:"redis"`
 }
 
 func LoadConfig() *AppConfig {
@@ -37,4 +38,11 @@ type databaseMeta struct {
 	Database string `yaml:"database"`
 	Minpool  int    `yaml:"minpool"`
 	Maxpool  int    `yaml:"maxpool"`
+}
+
+type discordMeta struct {
+	PermissionInteger uint64 `json:"permission_integer" yaml:"permission_integer"`
+	TokenFile         string `json:"token_file" yaml:"token_file"`
+	ClientIdFile      string `json:"client_id_file" yaml:"client_id_file"`
+	ClientSecretFile  string `json:"client_secret_file" yaml:"client_secret_file"`
 }

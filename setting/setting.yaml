@@ -1,3 +1,9 @@
+discord:
+  permission_integer: 534723950656
+  token_file: CREDENTIALS/bot_token.txt
+  client_id_file: CREDENTIALS/client_id.txt
+  client_secret_file: CREDENTIALS/client_secret.txt
+
 redis:
   host: 127.0.0.1
   port: 43061
