@@ -1,24 +1,24 @@
-package models
+package unitedb
 
 type BattleItem struct {
 	// ID of the item, this is only known in bot scope, the unite-db.com API
 	// does not provide this
-	Id uint64 `json:"id" db:"id"`
+	Id uint64 `json:"id"`
 
 	// name of the item
-	Name string `json:"name" db:"name"`
+	Name string `json:"name"`
 
 	// description of the item
-	Description string `json:"description" db:"description"`
+	Description string `json:"description"`
 
 	// Tier of the item in the current patch
-	Tier string `json:"tier" db:"tier"`
+	Tier string `json:"tier"`
 
 	// cooldown in seconds
-	Cooldown uint16 `json:"cooldown" db:"cooldown"`
+	Cooldown uint16 `json:"cooldown"`
 
 	// player level condition to unlock this item
-	TrainerLevel uint64 `json:"level" db:"trainer_level"`
+	Level uint64 `json:"level"`
 }
 
 type HeldItem struct {

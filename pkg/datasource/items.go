@@ -2,15 +2,13 @@ package datasource
 
 import (
 	"strings"
-
-	"github.com/yeyee2901/unitedb-discord-bot/pkg/models"
 )
 
 // TEST: ok
 // Get battle items, you can also use filter
 // - filterName -> will query for items that match the pattern (using LIKE comparison)
 // - filterTier -> will filter out items for that tier (using equal sign '=' comparison)
-func (ds *DataSource) GetBattleItems(filterName, filterTier string) (res []models.BattleItem, err error) {
+func (ds *DataSource) GetBattleItems(filterName, filterTier string) (res []BattleItem, err error) {
 	var queryReplacer []any
 	var filterString []string
 
@@ -41,4 +39,32 @@ func (ds *DataSource) GetBattleItems(filterName, filterTier string) (res []model
 	}
 
 	return res, err
+}
+
+// Bulk insert battle items into the database
+func (ds *DataSource) InsertBattleItems(battleItems []BattleItem) error {
+	// insert the data
+	q := `
+        INSERT INTO pokemon_battle_items
+            (name, description, tier, cooldown, trainer_level)
+        VALUES
+            (:name, :description, :tier, :cooldown, :trainer_level)
+    `
+
+	tx, err := ds.DB.Beginx()
+	if err != nil {
+		return err
+	}
+
+	if _, err := tx.NamedExec(q, battleItems); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
 }

@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/yeyee2901/unitedb-discord-bot/pkg/datasource"
 	"github.com/yeyee2901/unitedb-discord-bot/pkg/helper"
-	"github.com/yeyee2901/unitedb-discord-bot/pkg/models"
 
 	"github.com/bwmarrin/discordgo"
 )
 
 // formats the battle items into discordgo.InteractionResponseData according to the number of results from database
-func formatBattleItems(items []models.BattleItem) (resp *discordgo.InteractionResponseData, err error) {
+func formatBattleItems(items []datasource.BattleItem) (resp *discordgo.InteractionResponseData, err error) {
 	// for single result, show the details
 	if len(items) == 1 {
 		m1 := fmt.Sprintf("🟢 **%s** (Tier **%s**)\n\n", strings.ToUpper(items[0].Name), items[0].Tier)
