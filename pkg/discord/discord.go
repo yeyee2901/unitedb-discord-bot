@@ -8,10 +8,11 @@ import (
 )
 
 type DiscordBotService struct {
-	ClientId           string
-	ClientSecret       string
-	Token              string
-	RegisteredCommands []*discordgo.ApplicationCommand
+	ClientId       string
+	ClientSecret   string
+	Token          string
+	BotCommands    map[string]botCommand
+	CommandIdArray []string
 	*datasource.DataSource
 }
 

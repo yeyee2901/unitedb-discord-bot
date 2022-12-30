@@ -15,15 +15,15 @@ func (dc *DiscordBotService) registerCommands(s *discordgo.Session) {
 	log.Info().Msg("discord.RegisterCommands")
 
 	// list all bot commands
-	var botCommands = []botCommand{
-		{
+	var botCommands = map[string]botCommand{
+		"hello": {
 			DiscordGoCommand: &discordgo.ApplicationCommand{
 				Name:        "hello",
 				Description: "Make the bot say hello",
 			},
 			Handler: dc.HelloCommand,
 		},
-		{
+		"battle-items": {
 			DiscordGoCommand: &discordgo.ApplicationCommand{
 				Name:        "battle-items",
 				Description: "Search for battle items",
@@ -56,28 +56,29 @@ func (dc *DiscordBotService) registerCommands(s *discordgo.Session) {
 		guildId = dc.Config.Discord.Servers.Pokemon
 	}
 
-	registeredCommand := make([]*discordgo.ApplicationCommand, len(botCommands))
-
-	for i := range botCommands {
+	for k := range botCommands {
 		// register command to discord API
 		// NOTE: appId = Bot ID
-		if successCmd, err := s.ApplicationCommandCreate(s.State.User.ID, guildId, botCommands[i].DiscordGoCommand); err != nil {
+		if successCmd, err := s.ApplicationCommandCreate(s.State.User.ID, guildId, botCommands[k].DiscordGoCommand); err != nil {
 			log.Error().Err(err).Msg("discord.RegisterCommands.Failure")
 			panic(err)
 		} else {
 			// required for cleanup
-			registeredCommand[i] = successCmd
-
-			// register command handler
-			s.AddHandler(botCommands[i].Handler)
+			dc.CommandIdArray = append(dc.CommandIdArray, successCmd.ID)
 		}
 	}
 
-	dc.RegisteredCommands = registeredCommand
+	// attach to object, required for handlers register
+	dc.BotCommands = botCommands
+
+	// Register command handler
+	s.AddHandler(dc.interactionCreateEvent)
 }
 
 // should be called on cleanup function
 func (dc *DiscordBotService) unregisterCommands(s *discordgo.Session) {
+	log.Info().Interface("command_ids", dc.CommandIdArray).Msg("discord.unregisterCommand")
+
 	// for development purposes
 	var guildId string
 	if dc.Config.Discord.Mode != "production" {
@@ -86,14 +87,8 @@ func (dc *DiscordBotService) unregisterCommands(s *discordgo.Session) {
 		guildId = dc.Config.Discord.Servers.Pokemon
 	}
 
-	commandIds := []string{}
-	for i := range dc.RegisteredCommands {
-		commandIds = append(commandIds, dc.RegisteredCommands[i].ID)
-	}
-
-	log.Info().Interface("command_id", commandIds).Msg("discord.unregisterCommands")
-	for _, cmd := range dc.RegisteredCommands {
-		if err := s.ApplicationCommandDelete(s.State.User.ID, guildId, cmd.ID); err != nil {
+	for _, cmdId := range dc.CommandIdArray {
+		if err := s.ApplicationCommandDelete(s.State.User.ID, guildId, cmdId); err != nil {
 			panic(err)
 		}
 	}
@@ -124,7 +119,7 @@ func (dc *DiscordBotService) HelloCommand(s *discordgo.Session, i *discordgo.Int
 //
 // search for battle items
 func (dc *DiscordBotService) BattleItemsCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	log.Info().Msg("discord.BattleItemsCommand")
+	log.Info().Interface("interaction_data", i).Msg("discord.BattleItemsCommand")
 
 	// parse command options passed in
 	var (
