@@ -17,28 +17,28 @@ func TestDB_GetBattleItems(t *testing.T) {
 
 	// test without filter
 	log.Info().Msg("Without filter")
-	if res, err := ds.GetBattleItemsByName("", ""); err != nil {
+	if res, err := ds.GetBattleItems("", ""); err != nil {
 		t.Fatal(err)
 	} else {
 		debug.DumpStruct(res)
 	}
 
 	log.Info().Msg("With name filter")
-	if res, err := ds.GetBattleItemsByName("eject", ""); err != nil {
+	if res, err := ds.GetBattleItems("eject", ""); err != nil {
 		t.Fatal(err)
 	} else {
 		debug.DumpStruct(res)
 	}
 
 	log.Info().Msg("With tier filter")
-	if res, err := ds.GetBattleItemsByName("", "S"); err != nil {
+	if res, err := ds.GetBattleItems("", "S"); err != nil {
 		t.Fatal(err)
 	} else {
 		debug.DumpStruct(res)
 	}
 
 	log.Info().Msg("With both filter")
-	if res, err := ds.GetBattleItemsByName("X", "S"); err != nil {
+	if res, err := ds.GetBattleItems("X", "S"); err != nil {
 		t.Fatal(err)
 	} else {
 		debug.DumpStruct(res)

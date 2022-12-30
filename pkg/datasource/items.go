@@ -10,7 +10,7 @@ import (
 // Get battle items, you can also use filter
 // - filterName -> will query for items that match the pattern (using LIKE comparison)
 // - filterTier -> will filter out items for that tier (using equal sign '=' comparison)
-func (ds *DataSource) GetBattleItemsByName(filterName, filterTier string) (res []models.BattleItem, err error) {
+func (ds *DataSource) GetBattleItems(filterName, filterTier string) (res []models.BattleItem, err error) {
 	var queryReplacer []any
 	var filterString []string
 

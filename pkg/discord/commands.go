@@ -1,6 +1,8 @@
 package discord
 
 import (
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/rs/zerolog/log"
 )
@@ -53,11 +55,62 @@ func (dc *DiscordBotService) BattleItemsCommand(s *discordgo.Session, i *discord
 		}
 	}
 
-	// respond data
+	// fetch from database
+	battleItems, err := dc.GetBattleItems(optFilterName, optFilterTier)
+	if err != nil {
+		internalBotError(err, i, s, "discord.BattleItemsCommand.GetBattleItems")
+		return
+	}
+
+	// early return if no result found
+	if len(battleItems) == 0 {
+		userInteractionError(i, s, "No result found for that search term.", "discord.BattleItemsCommand.not-found", 10)
+		return
+	}
+
+	// format the battle items
+	formattedData, err := formatBattleItems(battleItems)
+	if err != nil {
+		internalBotError(err, i, s, "discord.BattleItemsCommand.formatBattleItems")
+		return
+	}
+
+	// send to discord
+	resp := &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: formattedData,
+	}
+	if err := s.InteractionRespond(i.Interaction, resp); err != nil {
+		internalBotError(err, i, s, "discord.BattleItemsCommand.InteractionRespond")
+		return
+	}
+}
+
+func internalBotError(err error, i *discordgo.InteractionCreate, s *discordgo.Session, logSubject string) {
+	log.Error().Err(err).Str("interaction_id", i.ID).Msg(logSubject)
+
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: "You entered these filters -> name: " + optFilterName + ", tier: " + optFilterTier,
+			Content: "🔴 Something went wrong inside. :(",
 		},
 	})
+}
+
+func userInteractionError(i *discordgo.InteractionCreate, s *discordgo.Session, message string, logSubject string, delAfterSeconds int) {
+	log.Info().Str("interaction_id", i.ID).Msg(logSubject)
+
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: "🟡 " + message + "\n\n*note: this message will be automatically deleted.",
+		},
+	})
+
+	// delete the message after that, else do not delete
+	if delAfterSeconds > 0 {
+		time.AfterFunc(time.Duration(delAfterSeconds)*time.Second, func() {
+			s.InteractionResponseDelete(i.Interaction)
+		})
+	}
 }
