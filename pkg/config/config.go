@@ -57,8 +57,9 @@ type discordServerID struct {
 }
 
 type uniteDBMeta struct {
-	BaseURL   string          `yaml:"base_url"`
-	Endpoints uniteDBEndpoint `yaml:"endpoints"`
+	BaseURL            string          `yaml:"base_url"`
+	UpdateIntervalDays int             `yaml:"update_interval_days"`
+	Endpoints          uniteDBEndpoint `yaml:"endpoints"`
 }
 
 type uniteDBEndpoint struct {

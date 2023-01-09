@@ -15,6 +15,7 @@ redis:
 
 unite_db:
   base_url: https://unite-db.com
+  update_interval_days: 14
   endpoints:
     pokemon: /pokemon.json
     held_items: /held_items.json

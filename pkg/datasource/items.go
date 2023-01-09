@@ -14,7 +14,7 @@ func (ds *DataSource) GetBattleItems(filterName, filterTier string) (res []Battl
 
 	baseQuery := `
         SELECT
-            id, name, description, tier, cooldown, trainer_level
+            id, name, description, tier, cooldown, trainer_level, last_updated
         FROM
             pokemon_battle_items
     `
