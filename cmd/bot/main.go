@@ -39,22 +39,37 @@ func main() {
 		logger = logger.With().Timestamp().Logger()
 	}
 
-	service, err := discord.NewDiscordBotService(
+	// open the connection
+	service, session, err := discord.NewDiscordBotService(
 		mustLoadFile(cfg.Bot.ClientIDFile, true),
 		mustLoadFile(cfg.Bot.ClientSecretFile, true),
 		mustLoadFile(cfg.Bot.TokenFile, true),
 		datasource.NewRedisStore(&cfg.Redis),
 		&logger,
+		cfg,
 	)
-    defer service.Close()
-
 	if err != nil {
 		log.Fatalln(err)
 	}
 
+	// register commands
+	cmdIDs, err := service.RegisterCommands(session)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// wait indefinitely
 	sig := make(chan os.Signal)
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
 	<-sig
+
+	// cleanup
+	err = service.UnregisterCommands(session, cmdIDs...)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	service.Close(session)
 }
 
 func mustLoadFile(path string, stripNewLine bool) string {
