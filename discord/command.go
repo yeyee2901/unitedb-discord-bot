@@ -1,35 +1,42 @@
 package discord
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"github.com/bwmarrin/discordgo"
+	unitepb "github.com/yeyee2901/unitedb-api-proto/gen/go/unitedb/v1"
+)
 
-func (bot *DiscordBotService) interactionCreateEvent(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	// do not respond if it's from private chat
-	if len(i.GuildID) == 0 {
-		return
-	}
-
-	// do not respond if it's not from command channel
-	sourceChannel, err := s.Channel(i.ChannelID)
-	if err != nil {
-		bot.logger.Error().Err(err).Msg("discord.event.interactionCreateEvent.getChannel")
-		return
-	}
-	if sourceChannel.Name != "bot-command" {
-		return
-	}
-
-	// find the matching handler and call it
-	if cmd, ok := bot.registeredCommands[i.ApplicationCommandData().Name]; ok {
-		cmd.Handler(s, i)
-	}
-}
-
+// BattleItemsCommand adalah event handler interaction create untuk command /battle-item
+//
+// This function may panic because of the API design
 func (dc *DiscordBotService) BattleItemsCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	defer func() {
+		if err := recover(); err != nil {
+			dc.handlePanic(err, "Bot panicked when handling /battle-items", s, i)
+		}
+	}()
+
+	// parse arguments
+	req := new(unitepb.GetBattleItemRequest)
+	cmdOptions := i.ApplicationCommandData().Options
+	for idx := range cmdOptions {
+		switch cmdOptions[idx].Name {
+		case "name":
+			itemName := cmdOptions[idx].StringValue()
+			req.Name = &itemName
+
+		case "tier":
+			itemTier := cmdOptions[idx].StringValue()
+			req.Tier = &itemTier
+		}
+	}
+
+	// TODO: dial connection to the gRPC API
+
 	// respond to the interaction, it's like returning a JSON response
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: "Hello world!",
+			Content: "name: " + *req.Name + ", tier: " + *req.Tier,
 		},
 	})
 }
