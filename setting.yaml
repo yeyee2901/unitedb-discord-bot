@@ -10,7 +10,7 @@ bot:
 
 # UniteDB gRPC API
 api:
-  host: 203.194.113.23:41
+  host: 203.194.113.23:40
   timeout_seconds: 30
 
 redis:

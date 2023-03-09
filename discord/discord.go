@@ -47,6 +47,9 @@ func NewDiscordBotService(
 
 	// set logging mode
 	if cfg.Bot.Mode == "development" {
+		session.LogLevel = discordgo.LogInformational | discordgo.LogWarning
+	} else {
+		session.LogLevel = discordgo.LogWarning
 	}
 
 	// open the websocket connection

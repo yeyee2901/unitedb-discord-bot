@@ -1,4 +1,5 @@
 // Package main ...
+// nolint
 package main
 
 import (
