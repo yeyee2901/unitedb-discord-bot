@@ -1,139 +1,71 @@
+// Package main ...
 package main
 
 import (
-	"context"
-	"fmt"
+	"bytes"
+	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
-	"github.com/bwmarrin/discordgo"
-	"github.com/yeyee2901/unitedb-discord-bot/pkg/config"
-	"github.com/yeyee2901/unitedb-discord-bot/pkg/datasource"
-	"github.com/yeyee2901/unitedb-discord-bot/pkg/discord"
-
-	"github.com/go-redis/redis/v8"
-	"github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+	"github.com/yeyee2901/unitedb-discord-bot/config"
+	"github.com/yeyee2901/unitedb-discord-bot/datasource"
+	"github.com/yeyee2901/unitedb-discord-bot/discord"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func main() {
-	// INIT: datasource
-	cfg := config.LoadConfig()
-	initLogger(cfg)
-	ds := datasource.NewDataSource(cfg, mustInitDB(cfg), mustInitRedis(cfg))
+	// load config file
+	var path string
+	if os.Getenv("CONFIG") == "" {
+		path = "setting.yaml"
+	}
+	cfg := config.MustLoadConfig(path)
 
-	// cleanup function with recovery to retrieve error
-	defer func() {
-		if err := recover(); err != nil {
-			log.Error().Err(fmt.Errorf("%v", err)).Msg("EXIT.fatal")
-			panic(err)
-		}
+	// init logger
+	var logger zerolog.Logger
+	if cfg.Bot.Mode == "production" {
+		logger = zerolog.New(&lumberjack.Logger{
+			Filename: "log/zerolog.log",
+			Compress: true,
+		})
+		logger = logger.With().Caller().Logger()
+		logger = logger.With().Timestamp().Logger()
+	} else {
+		logger = zerolog.New(os.Stdout)
+		logger = logger.Output(zerolog.ConsoleWriter{Out: os.Stdout})
+		logger = logger.With().Caller().Logger()
+		logger = logger.With().Timestamp().Logger()
+	}
 
-		if err := ds.DB.Close(); err != nil {
-			log.Error().Err(err).Msg("EXIT.db")
-		}
-
-		if err := ds.Redis.Close(); err != nil {
-			log.Error().Err(err).Msg("EXIT.redis")
-		}
-
-		log.Info().Msg("EXIT")
-	}()
-
-	// INIT: discord session
-	var (
-		clientId     = mustReadFile_String(cfg.Discord.ClientIdFile)
-		clientSecret = mustReadFile_String(cfg.Discord.ClientSecretFile)
-		token        = mustReadFile_String(cfg.Discord.TokenFile)
+	service, err := discord.NewDiscordBotService(
+		mustLoadFile(cfg.Bot.ClientIDFile, true),
+		mustLoadFile(cfg.Bot.ClientSecretFile, true),
+		mustLoadFile(cfg.Bot.TokenFile, true),
+		datasource.NewRedisStore(&cfg.Redis),
+		&logger,
 	)
+    defer service.Close()
 
-	dcSession, err := discordgo.New(fmt.Sprintf("Bot %s", token))
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	sig := make(chan os.Signal)
+	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
+	<-sig
+}
+
+func mustLoadFile(path string, stripNewLine bool) string {
+	b, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}
 
-	// INIT: discord bot service
-	dcBot := discord.NewDiscordBotService(clientId, clientSecret, token, ds)
-	dcBot.Init(dcSession)
-	defer dcBot.DeInit(dcSession)
-
-	// open connection to discord using websocket
-	// this also dispatches listener goroutine
-	log.Info().Msg("START")
-	defer dcSession.Close()
-
-	// quit signal
-	osQuit := make(chan os.Signal)
-	signal.Notify(osQuit, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
-
-	// wait for quit signal
-	sig := <-osQuit
-	log.Warn().Str("interrupt", fmt.Sprintf("Received signal %s", sig.String())).Msg("EXIT.interrupt")
-}
-
-// will panic on failure
-func mustInitRedis(cfg *config.AppConfig) *redis.Client {
-	r := redis.NewClient(&redis.Options{
-		Network: "tcp",
-		Addr:    cfg.Redis.Host + ":" + cfg.Redis.Port,
-	})
-
-	if err := r.Ping(context.Background()).Err(); err != nil {
-		panic(err)
+	if stripNewLine {
+		b = bytes.ReplaceAll(b, []byte{'\n'}, []byte{})
 	}
 
-	return r
-}
-
-// will panic on failure
-func mustInitDB(cfg *config.AppConfig) *sqlx.DB {
-	dbConfig := mysql.Config{
-		User:                 cfg.DB.User,
-		Passwd:               cfg.DB.Password,
-		Net:                  "tcp",
-		Addr:                 cfg.DB.Host,
-		DBName:               cfg.DB.Database,
-		AllowNativePasswords: true,
-		CheckConnLiveness:    true,
-	}
-
-	d := sqlx.MustConnect("mysql", dbConfig.FormatDSN())
-
-	if err := d.Ping(); err != nil {
-		panic(err)
-	}
-
-	return d
-}
-
-// will panic on failure or if the file is empty
-func mustReadFile_String(filepath string) string {
-	if b, err := os.ReadFile(filepath); err != nil {
-		panic(err)
-	} else {
-		if len(string(b)) == 0 {
-			panic(err)
-		}
-		return strings.ReplaceAll(string(b), "\n", "")
-	}
-}
-
-func initLogger(cfg *config.AppConfig) {
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	zerolog.TimeFieldFormat = "2006-01-02 15:04:05"
-	log.Logger = zerolog.New(&lumberjack.Logger{
-		Filename:   cfg.Discord.Logfile,
-		MaxSize:    100,
-		MaxBackups: 3,
-		MaxAge:     30,
-		Compress:   true,
-	})
-	log.Logger = log.With().Caller().Logger()
-	log.Logger = log.With().Timestamp().Logger()
-	log.Logger = log.With().Stack().Logger()
+	return string(b)
 }
