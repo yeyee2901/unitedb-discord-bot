@@ -59,6 +59,14 @@ func (bot *DiscordBotService) handleGrpcError(grpcErr *status.Status, s *discord
 			},
 		})
 
+	case codes.InvalidArgument:
+		sendError = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "🔴  Invalid argument.",
+			},
+		})
+
 	default:
 		bot.logger.Warn().Str("grpc", grpcErr.String()).Str("type", "grpc").Msg("gRPC error")
 		sendError = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
